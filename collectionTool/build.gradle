@@ -1,0 +1,92 @@
+buildscript {
+	repositories {
+		jcenter()
+	}
+	dependencies {
+		classpath "io.ratpack:ratpack-gradle:1.7.5"
+		classpath 'com.h2database:h2:1.4.186'
+		classpath 'org.jooq:jooq-codegen:3.8.1'
+		classpath group: 'javax.inject', name: 'javax.inject', version: '1'
+		classpath group: 'javax.xml.bind', name: 'jaxb-api', version: '2.3.0-b170201.1204'
+		classpath group: 'javax.activation', name: 'javax.activation-api', version: '1.2.0'
+		classpath group: 'javax.xml.bind', name: 'jaxb-api', version: '2.4.0-b180830.0359'
+		classpath group: 'com.sun.xml.bind', name: 'jaxb-impl', version: '2.3.2'
+		classpath group: 'com.sun.xml.bind', name: 'jaxb1-impl', version: '2.2.5.1'
+		classpath group: 'com.sun.xml.bind', name: 'jaxb-core', version: '2.3.0.1'
+		classpath group: 'com.sun.xml.bind', name: 'jaxb-xjc', version: '2.3.2'
+	}
+}
+
+plugins {
+	id 'java'
+}
+
+apply plugin: "io.ratpack.ratpack-java"
+apply plugin: "idea"
+
+group = 'com.app'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.projectlombok:lombok'
+	compile group: 'io.springfox', name: 'springfox-swagger2', version: '2.9.2'
+	compile 'com.h2database:h2:1.4.186'
+	compile 'org.jooq:jooq:3.8.1'
+	implementation group: 'javax.inject', name: 'javax.inject', version: '1'
+	implementation group: 'javax.xml.bind', name: 'jaxb-api', version: '2.3.0-b170201.1204'
+	implementation group: 'javax.activation', name: 'javax.activation-api', version: '1.2.0'
+	implementation group: 'javax.xml.bind', name: 'jaxb-api', version: '2.4.0-b180830.0359'
+	implementation group: 'com.sun.xml.bind', name: 'jaxb-impl', version: '2.3.2'
+	implementation group: 'com.sun.xml.bind', name: 'jaxb1-impl', version: '2.2.5.1'
+	implementation group: 'com.sun.xml.bind', name: 'jaxb-core', version: '2.3.0.1'
+	implementation group: 'com.sun.xml.bind', name: 'jaxb-xjc', version: '2.3.2'
+
+
+	runtime 'org.apache.logging.log4j:log4j-slf4j-impl:2.2'
+	runtime 'org.apache.logging.log4j:log4j-api:2.2'
+	runtime 'org.apache.logging.log4j:log4j-core:2.2'
+	annotationProcessor 'org.projectlombok:lombok'
+
+	implementation "jakarta.xml.bind:jakarta.xml.bind-api:2.3.2"
+	implementation "org.glassfish.jaxb:jaxb-runtime:2.3.2"
+
+	testImplementation('org.springframework.boot:spring-boot-starter-test') {
+		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+	}
+}
+
+import org.jooq.util.jaxb.*
+import org.jooq.util.*
+
+task jooqCodegen {
+	doLast {
+		String init = "$projectDir/src/main/resources/init.sql".replaceAll('\\\\', '/') // <1>
+		Configuration configuration = new Configuration()
+				.withJdbc(new Jdbc()
+						.withDriver("org.h2.Driver") // <2>
+						.withUrl("jdbc:h2:mem:todo;INIT=RUNSCRIPT FROM '$init'") // <3>
+				)
+				.withGenerator(new Generator()
+						.withDatabase(new Database()
+								.withName("org.jooq.util.h2.H2Database")
+								.withIncludes(".*")
+								.withExcludes("")
+								.withInputSchema("PUBLIC")
+						)
+						.withTarget(new Target()
+								.withDirectory("$projectDir/src/main/java/com/app/collectiontool") // <4>
+								.withPackageName("jooq"))) // <5>
+		GenerationTool.generate(configuration)
+	}
+}
+
+test {
+	useJUnitPlatform()
+}
+
+
